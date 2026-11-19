@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta property="og:title" content="🎁 Tu amigo invisible">
+<meta property="og:description" content="Abre el enlace para descubrir a quién te toca regalar.">
+<title>🎁 Tu amigo invisible</title>
+<style>
+:root{--bg:#f6f4ef;--surface:#fff;--ink:#1f2a24;--muted:#66726b;--line:#e3dfd5;--accent:#0f6b5c;--accent-ink:#fff;--accent-soft:#dcefe9}
+@media (prefers-color-scheme:dark){:root{--bg:#141a17;--surface:#1d2521;--ink:#e9efeb;--muted:#9aa8a0;--line:#2e3a34;--accent:#3fb59f;--accent-ink:#08201a;--accent-soft:#1d3a33}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:16px}
+main{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px 24px;text-align:center}
+h1{font-size:1.15rem;margin:0 0 4px}
+p{margin:6px 0;color:var(--muted)}
+.gift{font-size:5rem;line-height:1;margin:18px 0 10px;display:block;transition:transform .3s}
+button{font:inherit;cursor:pointer;border-radius:10px;padding:13px 20px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;width:100%}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.name{font-size:2rem;font-weight:700;background:var(--accent-soft);border-radius:12px;padding:22px 12px;margin:14px 0;word-break:break-word;animation:pop .45s ease-out}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;text-align:left;margin:18px 0 6px;font-size:.95rem}
+dt{color:var(--muted)}dd{margin:0}
+.msg{background:var(--bg);border-radius:10px;padding:10px 12px;margin:12px 0;text-align:left;font-size:.92rem;white-space:pre-wrap}
+.small{font-size:.8rem;margin-top:18px}
+[hidden]{display:none!important}
+@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.name{animation:none}.gift{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <section id="closed">
+    <h1 id="hello">Tu amigo invisible</h1>
+    <p>Asegúrate de que nadie mira tu pantalla.</p>
+    <span class="gift" aria-hidden="true">🎁</span>
+    <button class="primary" id="open">Toca para abrir</button>
+  </section>
+
+  <section id="opened" hidden>
+    <p>Te toca regalar a</p>
+    <div class="name" id="giftee" aria-live="polite"></div>
+    <dl id="info"></dl>
+    <div class="msg" id="message" hidden></div>
+    <button id="hide">Ocultar</button>
+  </section>
+
+  <section id="bad" hidden>
+    <span class="gift" aria-hidden="true">🤔</span>
+    <h1>Este enlace no es válido</h1>
+    <p>Puede que se haya cortado al copiarlo. Pide que te lo reenvíen.</p>
+  </section>
+
+  <p class="small">Este enlace es solo para ti. Si lo has recibido por error, ciérralo sin mirar.</p>
+</main>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+function decode(s){
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  const bytes = Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+let data = null;
+try {
+  const d = decode(location.hash.slice(1));
+  if (d && d.v === 1 && typeof d.g === 'string' && d.g) data = d;
+} catch {}
+
+if (!data){
+  $('closed').hidden = true; $('bad').hidden = false;
+} else {
+  $('hello').textContent = 'Hola, ' + (data.t || '') ;
+  $('open').onclick = () => {
+    $('giftee').textContent = data.g;
+    const info = $('info'); info.textContent = '';
+    [['Sorteo', data.e], ['Presupuesto', data.b], ['Fecha', data.d]].forEach(([k, v]) => {
+      if (!v) return;
+      const dt = document.createElement('dt'), dd = document.createElement('dd');
+      dt.textContent = k; dd.textContent = v; info.append(dt, dd);
+    });
+    const m = $('message'); m.textContent = data.m || ''; m.hidden = !data.m;
+    $('closed').hidden = true; $('opened').hidden = false;
+  };
+  $('hide').onclick = () => {
+    $('giftee').textContent = ''; $('opened').hidden = true; $('closed').hidden = false;
+  };
+}
+</script>
+</body>
+</html>
